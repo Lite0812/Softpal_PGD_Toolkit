@@ -188,4 +188,5 @@ A：
 - **PNG → PGD**：从「模板 PGD」自动识别需要生成的类型，无需手动选择
 
 
-
+## 📥 测试可用游戏
+CRYSTALiA《CRACK≡TRICK！》
