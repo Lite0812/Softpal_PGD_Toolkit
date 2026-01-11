@@ -120,9 +120,19 @@ def _pack_lookbehind(raw: bytes, look_behind: int, preset: str = "normal",
     - 控制字节：每 8 段，bit=1 为复制 [u16 offset][u8 count]，bit=0 为字面 [u8 len][len bytes]
     - 偏移 offset 为"窗口内偏移"，解码时若 dst>look_behind，会自动加上 (dst - look_behind)
     - 复制长度 count 范围 1..255（我们取 >=3 的匹配，其余走 literal）
-    预设：fast/normal/max 调整匹配桶大小与惰性匹配。
+    预设：fast/normal/max/promax 调整匹配桶大小与惰性匹配。
     进度回调：支持细粒度进度更新（每处理5%数据更新一次）
     """
+    # ProMax 模式：使用暴力搜索压缩
+    if preset == "promax":
+        try:
+            from pgd_promax_optimizer import pack_lookbehind_promax
+            # 使用专门的 Look-Behind LZ ProMax 压缩
+            return pack_lookbehind_promax(raw, look_behind, progress_cb)
+        except ImportError:
+            import warnings
+            warnings.warn(f"pgd_promax_optimizer 不可用，回退到 max 预设", UserWarning)
+            preset = "max"
     if ge_enc is None or not hasattr(ge_enc, "FastMatcher"):
         # 退化到纯 literal（不会报错，但体积较大）
         return _pack_literal_blocks(raw)

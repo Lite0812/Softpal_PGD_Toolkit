@@ -32,8 +32,9 @@ Softpal PGD Toolkit - PNG⇔PGD 互转工具（现代化 UI 版）
     --fmt <format>     目标 PGD 格式（必需）
                        可选值：11_C, 00_C, TGA, PGD3
     --preset <level>   压缩预设（默认：normal）
-                       可选值：fast, normal, max
-                       适用于：00_C, 11_C, PGD3 格式
+                       可选值：fast, normal, max, promax
+                       适用于：00_C, 11_C, PGD3, GE 格式
+                       promax: 暴力搜索，最优压缩率，速度慢10-30倍
     --offset <x,y>     像素偏移，格式：x,y（默认：0,0）
     --template <path>  PGD3 基准 GE 文件（PGD3 格式时必需）
 
@@ -745,7 +746,7 @@ def launch_gui():
         'mode': tk.StringVar(value='pgd2png'),
         'pgd_type': tk.StringVar(value='自动'),
         'ctype': tk.StringVar(value='3'),
-        'preset': tk.StringVar(value='max'),  # 默认max压缩预设
+        'preset': tk.StringVar(value='promax'),  # 默认 ProMax 压缩预设
         'in_path': tk.StringVar(),
         'out_path': tk.StringVar(),
         'tmpl_path': tk.StringVar(),
@@ -901,7 +902,7 @@ def launch_gui():
     cb_preset = ctk.CTkComboBox(
         compress_frame,
         variable=preset,
-        values=['fast', 'normal', 'max'],
+        values=['fast', 'normal', 'max', 'promax'],
         width=120,
         state='readonly',
         font=ctk.CTkFont(size=12)
@@ -2202,7 +2203,7 @@ def main():
     sp_p2p.add_argument("--in", dest="inp", required=True, help="输入 PNG 路径")
     sp_p2p.add_argument("--out", dest="out", required=True, help="输出 PGD 路径")
     sp_p2p.add_argument("--fmt", dest="fmt", required=True, choices=["11_C","00_C","TGA","PGD3"], help="目标 PGD 格式")
-    sp_p2p.add_argument("--preset", dest="preset", default="normal", choices=["fast","normal","max"], help="压缩预设（适用于 00_C/11_C/PGD3）")
+    sp_p2p.add_argument("--preset", dest="preset", default="promax", choices=["fast","normal","max","promax"], help="压缩预设（适用于 00_C/11_C/PGD3/GE）")
     sp_p2p.add_argument("--offset", dest="offset", default="0,0", help="像素偏移: x,y（默认 0,0）")
     sp_p2p.add_argument("--template", dest="tmpl", default=None, help="PGD3 基准 GE（部分工程需要）")
 

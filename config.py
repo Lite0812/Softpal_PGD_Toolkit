@@ -116,7 +116,7 @@ class GPUConfig:
 @dataclass
 class CompressionConfig:
     """压缩配置"""
-    preset: str = "normal"  # fast, normal, max
+    preset: str = "promax"  # fast, normal, max, promax - 默认 ProMax
     window_size: int = 4095
     k: int = 8  # 哈希长度
     max_bucket: int = 48
@@ -130,8 +130,12 @@ class CompressionConfig:
         elif self.preset == "max":
             self.max_bucket = 64
             self.lazy_match = 2
+        elif self.preset == "promax":
+            # ProMax 使用暴力搜索，不依赖这些参数
+            self.max_bucket = 64
+            self.lazy_match = 2
         elif self.preset != "normal":
-            raise ValueError("preset must be 'fast', 'normal', or 'max'")
+            raise ValueError("preset must be 'fast', 'normal', 'max', or 'promax'")
 
 
 # ============ 应用配置 ============
@@ -172,7 +176,20 @@ class AppConfig:
         )
     
     @classmethod
-    def create_gpu(cls) -> 'AppConfig':
+    def create_promax(cls) -> 'AppConfig':
+        """创建ProMax最优压缩配置（暴力搜索）"""
+        return cls(
+            optimization=OptimizationConfig(quality_level=3),
+            compression=CompressionConfig(preset="promax")
+        )
+    
+    @classmethod
+    def create_promax(cls) -> 'AppConfig':
+        """创建ProMax最优压缩配置（暴力搜索）"""
+        return cls(
+            optimization=OptimizationConfig(quality_level=3),
+            compression=CompressionConfig(preset="promax")
+        )
         """创建GPU加速配置"""
         return cls(
             gpu=GPUConfig(enable_gpu=True),
@@ -213,7 +230,7 @@ def validate_config(config: AppConfig) -> bool:
             return False
         
         # 验证压缩预设
-        if config.compression.preset not in ('fast', 'normal', 'max'):
+        if config.compression.preset not in ('fast', 'normal', 'max', 'promax'):
             return False
         
         # 验证并行配置

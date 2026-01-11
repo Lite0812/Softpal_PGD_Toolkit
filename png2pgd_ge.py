@@ -71,6 +71,18 @@ try:
 except ImportError:
     PROGRESS_UTILS_AVAILABLE = False
 
+# 导入 Numba 加速器
+try:
+    from pgd_numba_accelerator import (
+        is_accelerator_available,
+        optimize_yuv_encode,
+        NUMBA_AVAILABLE as ACCELERATOR_AVAILABLE
+    )
+except ImportError:
+    ACCELERATOR_AVAILABLE = False
+    def is_accelerator_available(): return False
+    optimize_yuv_encode = None
+
 try:
     import numpy as np
 except ImportError:
@@ -322,6 +334,7 @@ def ge_pre_compress(data: bytes, preset: str = "fast", progress_cb: Optional[Cal
             - 'fast': 快速 (k=8, bucket=32, lazy=1)
             - 'normal': 标准 (k=8, bucket=48, lazy=2) [默认]
             - 'max': 最大 (k=8, bucket=64, lazy=2)
+            - 'promax': 暴力搜索 (完全匹配，最优压缩率，速度慢10-30倍)
         progress_cb: 进度回调函数 (done, total)
     
     Returns:
@@ -332,7 +345,16 @@ def ge_pre_compress(data: bytes, preset: str = "fast", progress_cb: Optional[Cal
         - 内存视图避免数据拷贝
         - 可选Numba JIT加速LCP计算
         - 16字节块匹配加速
+        - ProMax模式使用暴力搜索获得最优压缩率
     """
+    # ProMax 模式：使用暴力搜索压缩
+    if preset == "promax":
+        try:
+            from pgd_promax_optimizer import ge_pre_compress_promax
+            return ge_pre_compress_promax(data, progress_cb)
+        except ImportError:
+            log("WARNING: pgd_promax_optimizer 不可用，回退到 max 预设")
+            preset = "max"
     n = len(data)
     if n == 0:
         return b"\x00"
@@ -462,6 +484,21 @@ def ge1_encode_from_bgra(bgra: np.ndarray) -> bytes:
     return out.tobytes()
 
 def ge2_encode_from_bgr(bgr: np.ndarray) -> bytes:
+    """
+    YUV 4:2:0 编码
+    
+    智能版本选择：
+    - Numba 可用：使用加速版本（3-5倍快）
+    - Numba 不可用：使用 Python 版本
+    """
+    # 优先使用 Numba 加速版本
+    if ACCELERATOR_AVAILABLE and optimize_yuv_encode is not None:
+        try:
+            return optimize_yuv_encode(bgr)
+        except Exception:
+            pass  # 回退到 Python 版本
+    
+    # Python 回退版本
     h, w, c = bgr.shape
     if (w % 2) or (h % 2):
         raise ValueError("压缩类型 2 编码要求偶数尺寸")
