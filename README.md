@@ -101,7 +101,7 @@ python main_UI.py
 2. **选择 PGD 类型**：推荐使用「自动」检测
 3. **配置压缩设置**：
    - 压缩类型：1/2/3（仅 GE 格式）
-   - 压缩预设：fast / normal / max
+   - 压缩预设：fast / normal / max / promax
 4. **优化选项**：
    - 质量级别：1 (fast) / 2 (balanced) / 3 (best)
    - GPU 加速：勾选启用（需要 CuPy）
